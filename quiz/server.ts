@@ -2,6 +2,7 @@ import  { promises as fsPromises } from 'fs';
 import path from 'path';
 import express, { Express, Request, Response, NextFunction } from 'express';
 import cors from 'cors';
+import { error } from 'console';
 
 /**
  * A type that represents a user object
@@ -57,6 +58,13 @@ const addMsgToRequest = (req: UserRequest, res: Response, next: NextFunction) =>
   }
 };
 
+// a middleware function that reads the user email
+const readUserEmail = (name : string) => {
+  if (users) {
+    users.find(u => u.username == name)
+  }
+}
+
 // a middleware function the verifies the origin of the request using a cors package
 app.use(cors({ origin: 'http://localhost:3000' }));
 // adds the middleware function to the application
@@ -94,6 +102,23 @@ app.post('/write/adduser', async (req: UserRequest, res: Response) => {
     res.status(500).send('Error saving user');
   }
 });
+
+app.use('/read/username', addMsgToRequest);
+app.get('/read/username/:name', (req, res) => {
+  // input parameters are in the params property
+  let name = req.params.name;
+  let usrs = users?.filter(u => u.username == name);
+
+  // if length 0 send error
+  if (usrs?.length === 0) {
+    res.send(
+      error({message: name + " not found", status: 404})
+    )
+  }
+
+  // send the objects that matched
+  res.send(usrs);
+})
 
 app.listen(port, () => {
   console.log(`Example app listening on port ${port}`);
